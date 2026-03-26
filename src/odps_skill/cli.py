@@ -1,4 +1,5 @@
 import argparse
+import json
 
 from odps_skill.client import create_client
 from odps_skill.config import load_config
@@ -26,6 +27,10 @@ def build_parser() -> argparse.ArgumentParser:
             subparser.add_argument("--table")
         if name == "query":
             subparser.add_argument("--sql")
+        if name == "summarize":
+            subparser.add_argument("--input-json")
+        if name == "diagnose":
+            subparser.add_argument("--error-type")
         subparser.add_argument("--output", choices=["json", "text", "table"], default="json")
     return parser
 
@@ -51,6 +56,34 @@ def main(argv=None) -> int:
             config = load_config(project=args.project)
             data = execute_query(client=create_client(config), project=args.project, sql=args.sql)
             meta = {"row_count": data.get("count", 0), "truncated": False}
+        elif args.command == "summarize":
+            if not args.input_json:
+                raise SystemExit("summarize requires --input-json")
+            data = json.loads(args.input_json)
+            payload = success_response(
+                action=args.command,
+                project=None,
+                data=data,
+                summary=build_summary(action="query", data=data, meta={}),
+                diagnostics=[],
+                meta={},
+            )
+            print(render(payload, output=args.output))
+            return 0
+        elif args.command == "diagnose":
+            if not args.error_type:
+                raise SystemExit("diagnose requires --error-type")
+            diagnostics = build_diagnostics(error_type=args.error_type, context={"action": "query"})
+            payload = success_response(
+                action=args.command,
+                project=None,
+                data={"diagnostics": diagnostics},
+                summary="Diagnostics generated.",
+                diagnostics=diagnostics,
+                meta={},
+            )
+            print(render(payload, output=args.output))
+            return 0
         else:
             data = {}
 

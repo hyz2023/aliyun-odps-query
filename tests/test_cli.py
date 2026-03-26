@@ -63,3 +63,23 @@ def test_legacy_script_entrypoint_delegates_to_new_cli(monkeypatch):
 
     module.main(["list", "--project", "demo"])
     assert called["argv"] == ["list", "--project", "demo"]
+
+
+def test_summarize_command_returns_summary_from_input_json(capsys):
+    exit_code = main(
+        [
+            "summarize",
+            "--input-json",
+            '{"columns":["id"],"rows":[{"id":1}],"count":1}',
+        ]
+    )
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert "returned 1 rows" in payload["summary"].lower()
+
+
+def test_diagnose_command_returns_diagnostics_from_error_type(capsys):
+    exit_code = main(["diagnose", "--error-type", "empty_result"])
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert any("partition" in item.lower() for item in payload["data"]["diagnostics"])
