@@ -16,6 +16,8 @@ def build_parser() -> argparse.ArgumentParser:
             subparser.add_argument("--project", required=True)
         if name == "list":
             subparser.add_argument("--pattern")
+        if name == "describe":
+            subparser.add_argument("--table")
         subparser.add_argument("--output", choices=["json", "text", "table"], default="json")
     return parser
 
@@ -23,10 +25,15 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv=None) -> int:
     args = build_parser().parse_args(argv)
     data = {}
-    if args.command == "list":
+    if args.command in {"list", "describe"}:
         config = load_config(project=args.project)
         metadata_service = MetadataService(create_client(config))
-        data = metadata_service.list_tables(pattern=args.pattern)
+        if args.command == "list":
+            data = metadata_service.list_tables(pattern=args.pattern)
+        elif not args.table:
+            raise SystemExit("describe requires --table")
+        else:
+            data = metadata_service.describe_table(args.table)
 
     payload = success_response(action=args.command, project=getattr(args, "project", None), data=data)
     print(render(payload, output=args.output))
