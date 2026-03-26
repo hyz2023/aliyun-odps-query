@@ -11,3 +11,14 @@ def validate_read_only_sql(sql: str) -> None:
         raise InvalidQueryError("Multi-statement SQL is not supported")
     if any(keyword in normalized for keyword in MUTATION_KEYWORDS):
         raise InvalidQueryError("Only read-only SQL is supported")
+
+
+def execute_query(*, client, project: str, sql: str) -> dict:
+    validate_read_only_sql(sql)
+    instance = client.execute_sql(sql, project=project)
+    with client.open_reader(instance.id) as reader:
+        columns = [column.name for column in reader.schema.columns]
+        rows = []
+        for record in reader:
+            rows.append({columns[index]: record[index] for index in range(len(columns))})
+    return {"columns": columns, "rows": rows, "count": len(rows)}

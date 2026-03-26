@@ -34,3 +34,11 @@ def test_cli_defaults_to_json_output(capsys, monkeypatch):
     payload = json.loads(out)
     assert exit_code == 0
     assert payload["action"] == "list"
+
+
+def test_query_command_returns_error_type_for_rejected_sql(capsys):
+    exit_code = main(["query", "--project", "demo", "--sql", "DELETE FROM t"])
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 1
+    assert payload["ok"] is False
+    assert payload["error"]["type"] == "invalid_query"
