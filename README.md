@@ -14,6 +14,32 @@ pip install pyodps pandas openpyxl
 pip install -e .
 ```
 
+## 给 OpenClaw Agent 的安装指引
+
+如果要让当前机器上的 OpenClaw agent 使用这个技能，按下面步骤安装：
+
+```bash
+mkdir -p ~/.openclaw/workspace/skills
+cp -R /Users/huangyuzhao/gitproject/aliyun-odps-query ~/.openclaw/workspace/skills/aliyun-odps-query
+cd ~/.openclaw/workspace/skills/aliyun-odps-query
+pip install -e .
+pip install pyodps pandas openpyxl
+```
+
+安装后 agent 可以直接参考 `SKILL.md` 调用，推荐命令：
+
+```bash
+odps-skill list --project my_project --output json
+odps-skill describe --project my_project --table order_detail --output json
+odps-skill query --project my_project --sql "SELECT * FROM order_detail LIMIT 10" --output json
+```
+
+如果 agent 仍走旧脚本入口，也可以使用：
+
+```bash
+python scripts/odps_query.py list --project my_project --output json
+```
+
 ## 环境配置
 
 ```bash
