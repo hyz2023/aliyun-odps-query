@@ -16,6 +16,12 @@ def render_text(payload: dict[str, Any]) -> str:
     lines = [f"Action: {payload['action']}"]
     if payload.get("summary"):
         lines.append(payload["summary"])
+    error = payload.get("error") or {}
+    if error.get("message"):
+        lines.append(f"Error: {error['message']}")
+    diagnostics = payload.get("diagnostics") or []
+    if diagnostics:
+        lines.extend(f"- {item}" for item in diagnostics)
     data = payload.get("data") or {}
     columns = data.get("columns", [])
     if columns:

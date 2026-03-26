@@ -1,6 +1,7 @@
 import argparse
 import json
 
+from odps_skill.client import DependencyMissingError
 from odps_skill.client import create_client
 from odps_skill.config import load_config
 from odps_skill.diagnostics import build_diagnostics
@@ -103,6 +104,15 @@ def main(argv=None) -> int:
             error_type="invalid_query",
             message=str(exc),
             diagnostics=build_diagnostics(error_type="invalid_query", context={"action": args.command}),
+        )
+        exit_code = 1
+    except DependencyMissingError as exc:
+        payload = error_response(
+            action=args.command,
+            project=getattr(args, "project", None),
+            error_type="dependency_missing",
+            message=str(exc),
+            diagnostics=build_diagnostics(error_type="dependency_missing", context={"action": args.command}),
         )
         exit_code = 1
 

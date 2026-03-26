@@ -20,3 +20,16 @@ def test_text_and_table_render_same_underlying_payload():
     table = render(payload, output="table")
     assert "id" in text
     assert "id" in table
+
+
+def test_text_render_includes_error_details():
+    payload = {
+        "ok": False,
+        "action": "describe",
+        "summary": "Command failed.",
+        "diagnostics": ["Install pyodps before using ODPS-backed commands."],
+        "error": {"type": "dependency_missing", "message": "pyodps is required"},
+        "data": None,
+    }
+    text = render(payload, output="text")
+    assert "pyodps is required" in text

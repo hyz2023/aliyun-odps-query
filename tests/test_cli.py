@@ -1,9 +1,11 @@
 import json
 import importlib.util
+import subprocess
 from types import SimpleNamespace
 from pathlib import Path
 
 import odps_skill.cli as cli
+from odps_skill.client import DependencyMissingError
 from odps_skill.cli import build_parser
 from odps_skill.cli import main
 from odps_skill.schemas import success_response
@@ -83,3 +85,24 @@ def test_diagnose_command_returns_diagnostics_from_error_type(capsys):
     payload = json.loads(capsys.readouterr().out)
     assert exit_code == 0
     assert any("partition" in item.lower() for item in payload["data"]["diagnostics"])
+
+
+def test_list_command_maps_missing_dependency_to_structured_error(capsys, monkeypatch):
+    monkeypatch.setattr(cli, "load_config", lambda **kwargs: SimpleNamespace(project=kwargs["project"]))
+    monkeypatch.setattr(cli, "create_client", lambda config: (_ for _ in ()).throw(DependencyMissingError("pyodps is required")))
+    exit_code = main(["list", "--project", "demo"])
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 1
+    assert payload["error"]["type"] == "dependency_missing"
+
+
+def test_legacy_script_runs_directly_from_repo_root():
+    result = subprocess.run(
+        ["python", "scripts/odps_query.py", "diagnose", "--error-type", "empty_result", "--output", "json"],
+        capture_output=True,
+        text=True,
+        cwd=Path(__file__).resolve().parents[1],
+    )
+    assert result.returncode == 0
+    payload = json.loads(result.stdout)
+    assert payload["action"] == "diagnose"
