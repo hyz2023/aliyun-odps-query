@@ -1,5 +1,7 @@
 import argparse
 
+from odps_skill.schemas import success_response
+
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="odps-skill")
@@ -10,5 +12,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv=None) -> int:
-    build_parser().parse_args(argv)
+    args = build_parser().parse_args(argv)
+    success_response(action=args.command, project=getattr(args, "project", None), data={})
     return 0
