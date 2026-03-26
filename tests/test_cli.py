@@ -1,5 +1,7 @@
 import json
+import importlib.util
 from types import SimpleNamespace
+from pathlib import Path
 
 import odps_skill.cli as cli
 from odps_skill.cli import build_parser
@@ -42,3 +44,22 @@ def test_query_command_returns_error_type_for_rejected_sql(capsys):
     assert exit_code == 1
     assert payload["ok"] is False
     assert payload["error"]["type"] == "invalid_query"
+
+
+def test_legacy_script_entrypoint_delegates_to_new_cli(monkeypatch):
+    called = {}
+
+    def fake_main(argv=None):
+        called["argv"] = argv
+        return 0
+
+    monkeypatch.setattr(cli, "main", fake_main)
+
+    script_path = Path(__file__).resolve().parents[1] / "scripts" / "odps_query.py"
+    spec = importlib.util.spec_from_file_location("legacy_odps_query", script_path)
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+
+    module.main(["list", "--project", "demo"])
+    assert called["argv"] == ["list", "--project", "demo"]
