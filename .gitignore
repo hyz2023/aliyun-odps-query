@@ -1,5 +1,7 @@
 .worktrees/
 __pycache__/
 .pytest_cache/
+.venv-odps-test/
+*.egg-info/
 docs/
 tests/

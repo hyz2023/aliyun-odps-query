@@ -16,7 +16,7 @@ def validate_read_only_sql(sql: str) -> None:
 def execute_query(*, client, project: str, sql: str) -> dict:
     validate_read_only_sql(sql)
     instance = client.execute_sql(sql, project=project)
-    with client.open_reader(instance.id) as reader:
+    with instance.open_reader() as reader:
         columns = [column.name for column in reader.schema.columns]
         rows = []
         for record in reader:
