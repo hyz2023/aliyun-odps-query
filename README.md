@@ -1,22 +1,20 @@
-# 阿里云 ODPS 查询工具
+# 阿里云 ODPS Query
 
-## 安装依赖
+面向当前机器本地使用的 ODPS / MaxCompute 只读查询工具，适合 OpenClaw agents 和人工终端调试共同使用。
+
+## 安装
 
 ```bash
-# 安装 ODPS 客户端和数据处理库
 pip install pyodps pandas openpyxl
 ```
 
-或
+如果需要本地命令入口：
 
 ```bash
-# 使用 requirements.txt
-pip install -r requirements.txt
+pip install -e .
 ```
 
-## 配置环境变量
-
-在 `~/.bashrc` 或 `~/.zshrc` 中添加:
+## 环境配置
 
 ```bash
 export ALIBABA_ACCESSKEY_ID="your_access_key_id"
@@ -25,58 +23,57 @@ export ALIBABA_ODPS_ENDPOINT="http://service.odps.aliyun.com/api"
 export ALIBABA_ODPS_PROJECT="your_project_name"
 ```
 
-然后执行:
+## 常用命令
+
+列出表：
+
 ```bash
-source ~/.bashrc
+odps-skill list --project my_project --output json
 ```
 
-## 使用示例
+查看表结构：
 
-### 1. 列出所有表
 ```bash
-python scripts/odps_query.py --action list --project my_project
+odps-skill describe --project my_project --table order_detail --output json
 ```
 
-### 2. 查看表结构
+执行只读 SQL：
+
 ```bash
-python scripts/odps_query.py --action describe --project my_project --table user_info
+odps-skill query --project my_project --sql "SELECT * FROM order_detail LIMIT 10" --output json
 ```
 
-### 3. 执行 SQL 查询
+对结果做摘要：
+
 ```bash
-python scripts/odps_query.py --action query --project my_project \
-  --sql "SELECT * FROM user_info LIMIT 10"
+odps-skill summarize --input-json '{"columns":["id"],"rows":[{"id":1}],"count":1}' --output json
 ```
 
-### 4. 导出查询结果
+生成诊断建议：
+
 ```bash
-python scripts/odps_query.py --action query --project my_project \
-  --sql "SELECT * FROM order_detail WHERE pt >= '20260201'" \
-  --output csv --output-file orders.csv
+odps-skill diagnose --error-type empty_result --output json
 ```
 
-## 注意事项
+## 输出格式
 
-1. **权限**: AccessKey 需要有对应 ODPS 项目的读取权限
-2. **SQL 限制**: 仅支持 SELECT 查询
-3. **计费**: ODPS 按扫描数据量计费，建议使用分区过滤
-4. **结果限制**: 默认限制 100 行，可通过 --limit 调整
+支持：
 
-## 故障排查
+- `json`，默认，适合 agent 调用
+- `text`，适合快速查看
+- `table`，适合终端中的表格式输出
 
-### 问题 1: 找不到 odps 模块
+## 兼容旧入口
+
+旧脚本路径仍然可用，但现在只是 CLI 兼容壳：
+
 ```bash
-pip install pyodps
+python scripts/odps_query.py list --project my_project --output json
 ```
 
-### 问题 2: 认证失败
-检查 AccessKey ID 和 Secret 是否正确，是否有对应项目权限
+## 限制
 
-### 问题 3: 连接超时
-检查网络连接，或尝试更换 endpoint:
-```bash
-python scripts/odps_query.py --endpoint http://service.odps.aliyun.com/api ...
-```
-
-### 问题 4: 表不存在
-确认表名和项目名称是否正确，注意大小写
+- 仅支持本机使用
+- 不做 SQL 生成
+- 不支持写操作和删表类 SQL
+- 不暴露远程服务
