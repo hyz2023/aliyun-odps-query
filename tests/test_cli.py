@@ -1,4 +1,7 @@
+import json
+
 from odps_skill.cli import build_parser
+from odps_skill.cli import main
 from odps_skill.schemas import success_response
 
 
@@ -15,3 +18,11 @@ def test_success_response_has_stable_top_level_shape():
     assert "summary" in result
     assert "diagnostics" in result
     assert "meta" in result
+
+
+def test_cli_defaults_to_json_output(capsys):
+    exit_code = main(["list", "--project", "demo"])
+    out = capsys.readouterr().out
+    payload = json.loads(out)
+    assert exit_code == 0
+    assert payload["action"] == "list"
